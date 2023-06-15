@@ -1,13 +1,18 @@
 import json
-from typing import List, Union
+from typing import List, Union, Type, TypeVar
 import hmac
 import hashlib
 from aiohttp import ClientSession
 
-from .schemas.requests import (
-    CreateInvoice, CheckInvoiceStatus, BaseLavaRequest,
-    LTT, CreateInvoiceResponse, CheckInvoiceStatusResponse, HTTPMethod
-)
+from .misc import HTTPMethod
+
+from .endpoints.base import LavaEndpoint
+from .endpoints import CreateInvoice, CheckInvoiceStatus
+
+from .types.base import LavaType
+
+
+_LTT = TypeVar("_LTT", bound=LavaType)
 
 
 class BusinessClient:
@@ -21,20 +26,15 @@ class BusinessClient:
         self.mics_key = mics_key
         self.shop_id = shop_id
 
-    async def _execute_request(self, request: BaseLavaRequest[LTT]) -> LTT:
+    async def _execute_request(self, request: LavaEndpoint[_LTT]) -> _LTT:
         data_dict = request.dict(exclude_none=True)
         data_bytes = json.dumps(data_dict).encode()
 
-        signature = None
-        if request.__generate_signature__:
-            if self.private_key is None:
-                raise ValueError("can't generate signature, because key is not provided")
-
-            signature = (
-                hmac
-                .new(self.private_key.encode('UTF-8'), data_bytes, hashlib.sha256)
-                .hexdigest()
-            )
+        signature = (
+            hmac
+            .new(self.private_key.encode('UTF-8'), data_bytes, hashlib.sha256)
+            .hexdigest()
+        )
 
         headers = {
             'Accept': 'application/json',
@@ -42,7 +42,7 @@ class BusinessClient:
             'Signature': signature,
         }
         http_method = request.__http_method__
-        url = request.__endpoint_url__
+        url = request.__endpoint__
 
         request_call_arguments = {
             "method": http_method.value,
@@ -64,7 +64,7 @@ class BusinessClient:
             response = await cs.request(**request_call_arguments)
             data = await response.json()
 
-        parsed_data = request.__returning__.parse_obj(data)
+        parsed_data = request.__returns__.parse_obj(data)
         return parsed_data
 
     async def create_invoice(
@@ -80,7 +80,7 @@ class BusinessClient:
             comment: str = None,
             include_service: List[str] = None,
             exclude_service: List[str] = None,
-    ) -> CreateInvoiceResponse:
+    ) -> CreateInvoice.__returns__:
         request = CreateInvoice(
             sum=sum_,
             orderId=order_id,
@@ -100,7 +100,7 @@ class BusinessClient:
             self,
             order_id: str,
             invoice_id: str
-    ) -> CheckInvoiceStatusResponse:
+    ) -> CheckInvoiceStatus.__returns__:
 
         request = CheckInvoiceStatus(
             shopId=self.shop_id,
