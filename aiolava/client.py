@@ -1,5 +1,5 @@
 import json
-from typing import List, Union, Type, TypeVar
+from typing import List, Union, TypeVar
 import hmac
 import hashlib
 from aiohttp import ClientSession
@@ -19,7 +19,7 @@ class BusinessClient:
     def __init__(self,
                  private_key: str,
                  mics_key: str,
-                 shop_id: str
+                 shop_id: str = None,
                  ):
 
         self.private_key = private_key
@@ -71,7 +71,7 @@ class BusinessClient:
             self,
             sum_: float,
             order_id: Union[str, int],
-            shop_id: str,
+            shop_id: str = None,
             hook_url: str = None,
             fail_url: str = None,
             success_url: str = None,
@@ -81,10 +81,14 @@ class BusinessClient:
             include_service: List[str] = None,
             exclude_service: List[str] = None,
     ) -> CreateInvoice.__returns__:
+
+        if shop_id is None:
+            shop_id = self.shop_id
+
         request = CreateInvoice(
             sum=sum_,
             orderId=order_id,
-            shopId=shop_id,
+            shopId=shop_id or self.shop_id,
             hookUrl=hook_url,
             failUrl=fail_url,
             successUrl=success_url,
@@ -98,12 +102,16 @@ class BusinessClient:
 
     async def check_invoice_status(
             self,
-            order_id: str,
-            invoice_id: str
+            shop_id: str = None,
+            order_id: str = None,
+            invoice_id: str = None,
     ) -> CheckInvoiceStatus.__returns__:
 
+        if shop_id is None:
+            shop_id = self.shop_id
+
         request = CheckInvoiceStatus(
-            shopId=self.shop_id,
+            shopId=shop_id,
             orderId=order_id,
             invoiceId=invoice_id
         )
