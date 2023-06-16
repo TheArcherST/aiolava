@@ -102,9 +102,9 @@ class BusinessClient:
 
     async def check_invoice_status(
             self,
-            shop_id: str = None,
             order_id: str = None,
             invoice_id: str = None,
+            shop_id: str = None,
     ) -> CheckInvoiceStatus.__returns__:
 
         if shop_id is None:
