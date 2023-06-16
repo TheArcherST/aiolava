@@ -1,0 +1,18 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aiolava"
+description = "Asyncio python SDK for lava.ru"
+version = "0.0.0"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Shapovalov Mihail", email = "mihailsapovalov05@gmail.com"}
+]
+dependencies = [
+    "aiohttp",
+    "pydantic",
+]
