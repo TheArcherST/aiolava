@@ -15,7 +15,7 @@ class BaseClient:
     _BASE_URL = 'https://api.lava.ru'
 
     @abstractmethod
-    def _prepare_request(self, payload: dict, headers: dict) -> Request:
+    def _prepare_request(self, payload: dict, headers: dict) -> tuple[dict, dict]:
         raise NotImplemented
 
     async def _execute_request(self, request: LavaEndpoint[_LTT]) -> _LTT:
