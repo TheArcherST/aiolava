@@ -1,9 +1,9 @@
 from typing import Union, List
 
-from .base import LavaEndpoint
-from ..misc import HTTPMethod
+from aiolava.misc import HTTPMethod
+from aiolava.endpoints.base import LavaEndpoint
 
-from ..types.invoice import CreateInvoiceResponse
+from aiolava.types.business.create_invoice import CreateInvoiceResponse
 
 
 class CreateInvoice(LavaEndpoint):

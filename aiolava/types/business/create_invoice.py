@@ -1,7 +1,7 @@
 from typing import List
 from datetime import datetime
 
-from .base import LavaType
+from aiolava.types.base import LavaType
 
 
 class CreatedInvoice(LavaType):

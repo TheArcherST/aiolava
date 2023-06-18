@@ -2,20 +2,16 @@ import json
 from typing import List, Union, TypeVar
 import hmac
 import hashlib
-from aiohttp import ClientSession
 
-from .misc import HTTPMethod
-
-from .endpoints.base import LavaEndpoint
-from .endpoints import CreateInvoice, CheckInvoiceStatus
-
+from .base_client import BaseClient
+from .endpoints import business as endpoints
 from .types.base import LavaType
 
 
 _LTT = TypeVar("_LTT", bound=LavaType)
 
 
-class BusinessClient:
+class LavaBusinessClient(BaseClient):
     def __init__(self,
                  private_key: str,
                  mics_key: str,
@@ -26,46 +22,17 @@ class BusinessClient:
         self.mics_key = mics_key
         self.shop_id = shop_id
 
-    async def _execute_request(self, request: LavaEndpoint[_LTT]) -> _LTT:
-        data_dict = request.dict(exclude_none=True)
-        data_bytes = json.dumps(data_dict).encode()
-
+    def _prepare_request(self, payload: dict, headers: dict) -> tuple[dict, dict]:
+        payload_bytes = json.dumps(payload).encode()
         signature = (
             hmac
-            .new(self.private_key.encode('UTF-8'), data_bytes, hashlib.sha256)
+            .new(self.private_key.encode('UTF-8'), payload_bytes, hashlib.sha256)
             .hexdigest()
         )
-
-        headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
+        headers.update({
             'Signature': signature,
-        }
-        http_method = request.__http_method__
-        url = request.__endpoint__
-
-        request_call_arguments = {
-            "method": http_method.value,
-            "url": url,
-            "headers": headers,
-        }
-
-        if http_method is HTTPMethod.GET and data_bytes:
-            raise RuntimeError("inconsistent request. data can only be provided with get request.")
-        elif http_method is HTTPMethod.POST:
-            request_call_arguments.update({"json": data_dict})
-        else:
-            raise KeyError(f"http method `{http_method}` not supports by lava client.")
-
-        async with ClientSession(
-                base_url='https://api.lava.ru',
-        ) as cs:
-
-            response = await cs.request(**request_call_arguments)
-            data = await response.json()
-
-        parsed_data = request.__returns__.parse_obj(data)
-        return parsed_data
+        })
+        return payload, headers
 
     async def create_invoice(
             self,
@@ -80,12 +47,12 @@ class BusinessClient:
             comment: str = None,
             include_service: List[str] = None,
             exclude_service: List[str] = None,
-    ) -> CreateInvoice.__returns__:
+    ) -> endpoints.CreateInvoice.__returns__:
 
         if shop_id is None:
             shop_id = self.shop_id
 
-        request = CreateInvoice(
+        request = endpoints.CreateInvoice(
             sum=sum_,
             orderId=order_id,
             shopId=shop_id or self.shop_id,
@@ -105,14 +72,19 @@ class BusinessClient:
             order_id: str = None,
             invoice_id: str = None,
             shop_id: str = None,
-    ) -> CheckInvoiceStatus.__returns__:
+    ) -> endpoints.CheckInvoiceStatus.__returns__:
 
         if shop_id is None:
             shop_id = self.shop_id
 
-        request = CheckInvoiceStatus(
+        request = endpoints.CheckInvoiceStatus(
             shopId=shop_id,
             orderId=order_id,
             invoiceId=invoice_id
         )
         return await self._execute_request(request)
+
+
+__all__ = [
+    "LavaBusinessClient",
+]

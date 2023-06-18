@@ -1,9 +1,9 @@
 from pydantic import root_validator
 
-from .base import LavaEndpoint
-from ..misc import HTTPMethod
+from aiolava.misc import HTTPMethod
+from aiolava.endpoints.base import LavaEndpoint
 
-from ..types.invoice_status import CheckInvoiceStatusResponse
+from aiolava.types.business.check_invoice_status import CheckInvoiceStatusResponse
 
 
 class CheckInvoiceStatus(LavaEndpoint):
